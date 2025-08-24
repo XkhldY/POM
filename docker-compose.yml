@@ -1,0 +1,85 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: pomegranate_postgres
+    environment:
+      POSTGRES_DB: pomegranate
+      POSTGRES_USER: pomegranate
+      POSTGRES_PASSWORD: pomegranate_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/alembic.ini:/alembic.ini:ro
+    networks:
+      - pomegranate_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pomegranate"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: pomegranate_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - pomegranate_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ChromaDB Vector Database
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: pomegranate_chromadb
+    environment:
+      - CHROMA_SERVER_HOST=0.0.0.0
+      - CHROMA_SERVER_HTTP_PORT=8000
+      - CHROMA_SERVER_CORS_ALLOW_ORIGINS=["*"]
+    ports:
+      - "8001:8000"
+    volumes:
+      - chromadb_data:/chroma/chroma
+    networks:
+      - pomegranate_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/heartbeat"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # pgAdmin (Optional - Database Management)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pomegranate_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@pomegranate.local
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - pomegranate_network
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
+  redis_data:
+  chromadb_data:
+  pgadmin_data:
+
+networks:
+  pomegranate_network:
+    driver: bridge
