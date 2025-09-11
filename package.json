@@ -1,0 +1,17 @@
+{
+  "name": "pom-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Monorepo for the POM resume analysis application.",
+  "scripts": {
+    "dev": "npm run dev --workspace=frontend",
+    "build": "npm run build --workspace=frontend && npm run build --workspace=backend",
+    "start": "npm run start --workspace=frontend"
+  },
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "author": "Jules",
+  "license": "ISC"
+}
