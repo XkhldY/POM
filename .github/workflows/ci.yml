@@ -1,0 +1,50 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install Node.js dependencies
+      run: npm install
+
+    - name: Build Frontend
+      run: npm run build --workspace=frontend
+
+    # - name: Test Frontend
+    #   run: npm test --workspace=frontend
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install Poetry
+      run: pip install poetry
+
+    - name: Install Python dependencies
+      working-directory: ./backend
+      run: poetry install
+
+    - name: Test Backend
+      working-directory: ./backend
+      run: poetry run pytest
+
+    - name: Docker Build Check
+      run: |
+        docker compose build
